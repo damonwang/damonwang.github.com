@@ -1,0 +1,151 @@
+---
+layout: post
+title: "150?1.4: Percent-encoding"
+published: true
+---
+
+> Write a method to replace all spaces in a string with '%20'.  You may
+> assume that the string has sufficient space at the end of the string
+> to hold the additional characters, and that you are given the "true"
+> length of the string.
+
+It's a little unclear what's meant here by '"true" length of the
+string'---the length of the allocated character buffer? the length of
+the percent-encoded output? the length of the input? with or without the
+terminating null byte?  So let's just ignore the second clause of that
+conjunction.
+
+Since I'm guaranteed only that the allocated string will accomodate the
+percent-encoded length, not that it is exactly the correct size, I must
+first calculate the length of the percent-encoded output.  At which
+point I can realloc the string to size anyway, so let's ignore the first
+part of the conjunction as well.
+
+> Write a method to replace all spaces in a string with '%20'.
+
+I think only trick here is walking the string backwards.  Since the
+percent-encoded ouput is at least as long and usually longer than the
+input at every step, if we were to walk the string forward from the
+beginning we would clobber unconsumed input.
+
+    void percent_encode(char *s) {
+      size_t encoded_len = 0;
+      char *t = NULL, *u = NULL;
+
+      for (t = s; *t; ++t) {
+        switch (*t) {
+        case ' ': encoded_len += 3; break;
+        default: ++encoded_len;
+        }
+      }
+
+      realloc(s, encoded_len + sizeof('\0'))
+
+      u = s + encoded_len;
+      /* s = beginning of input,
+         t = where to read next character to encode
+         u = where to write next character of output
+       */
+
+      while (t >= s) {
+        switch (*t--) {
+        case ' ':
+          *u-- = '0';
+          *u-- = '2';
+          *u-- = '%';
+          break;
+        default: *u-- = t[1];
+        }
+      }
+    }
+
+Of course, if we conveniently understand '"true" length' to mean the
+length of the percent-encoded output, this becomes a lot simpler:
+
+    void percent_encode(char *s, size_t encoded_len) {
+      char *t = s + strlen(s), *u = s + encoded_len;
+
+      while (t >= s) {
+        switch (*t--) {
+        case ' ':
+          *u-- = '0';
+          *u-- = '2';
+          *u-- = '%';
+          break;
+        default: *u-- = t[1];
+        }
+      }
+    }
+
+This question asks for a subset of (a non-standard extension to) 
+[URL encoding](http://en.wikipedia.org/wiki/Percent-encoding)
+so a natural extension is to ask for the whole thing. 
+
+> Write a method that replaces any occurrence of a reserved character
+> with the three-character string "%%%02hhx" (i.e., a literal '%'
+> followed by the two-digit hexadecimal representation of the
+> character's unsigned integer value).  The reserved characters are
+> (from RFC 3986) "!\*'();:@&=+$,/?#\[\]".
+
+For brevity's sake, let's assume the above 'convenient' interpretation
+of '"true" length.'  Also, ASCII, because ASCII makes everything easy.
+
+    #include<string.h>
+    void percent_encode(char *s, size_t encoded_len) {
+      bool reserved[256];
+      char *t = s + strlen(s), *u = s + encoded_len;
+
+      /* this could be cached if performance were a concern */
+      memset(reserved, false, sizeof(reserved));
+      for (char *r = "!\*'();:@&=+$,/?#\[\]"; *r; ++r) {
+        reserved[*r] = true;
+      }
+
+      while (t >= s) {
+        if (reserved[*t]) {
+          sprintf(u - 2, "%%%02hhx", *t);
+          u -= 3;
+          t -= 1;
+        } else *u-- = *t--;
+      }
+    }
+
+Since [UTF-8](http://en.wikipedia.org/wiki/Utf-8#Description) does not
+share values between single bytes, leading bytes, and continuation
+bytes, the above implementations are transparently UTF-8 compatible.
+Non-ASCII bytes, including the UTF-8 leading and continuation bytes,
+just get dumbly copied over.
+
+But this is a pedant's definition of UTF-8 compatibility.  A more
+reasonable behavior would be that specified for encoding arbitrary
+character data into URIs:  unreserved characters should be represented
+directly, and all other characters should be encoded as UTF-8 and then
+percent-encoded byte-by-byte.  Note the wording of "all other
+characters"---confusingly, the union of reserved and unreserved
+characters is nowhere near the universe of characters.
+
+So we just reverse the test:
+
+    #include<string.h>
+    void percent_encode(char *s, size_t encoded_len) {
+      bool unreserved[256];
+      char *t = s + strlen(s), *u = s + encoded_len;
+
+      memset(unreserved, false, sizeof(unreserved));
+      for (char *r = "abcdefghijklmnopqrstuvwxyz"
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+          "0123456789-_.~"
+          ; *r; ++r) {
+        unreserved[*r] = true;
+      }
+
+      while (t >= s) {
+        if (!unreserved[*t]) {
+          sprintf(u - 2, "%%%02hhx", *t);
+          u -= 3;
+          t -= 1;
+        } else *u-- = *t--;
+      }
+    }
+
+By the way, has anyone noticed the undefined behavior?

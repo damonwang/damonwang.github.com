@@ -1,0 +1,23 @@
+---
+layout: post
+title: "150?1.2: Reverse a string in place"
+published: true
+---
+
+> Implement a function `void reverse(char *str)` in C or C++ which
+> reverses a null-terminated string.
+
+There's not much to say about this one.  Honestly, I wonder if I'm
+missing something subtle, because if I understand this question
+correctly it's like FizzBuzz but without any of the edge cases or
+interesting questions of extensibility.
+
+    void reverse(char *s) {
+      char tmp;
+      char *t = s + strlen(s) - 1;
+      while (s < t) {
+        tmp = *s;
+        *s++ = *t;
+        *t-- = tmp;
+      }
+    }

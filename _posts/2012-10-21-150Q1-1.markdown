@@ -1,0 +1,47 @@
+---
+layout: post
+title: "150?1.1: Does String Repeat Characters?"
+published: true
+---
+
+> Implement an algorithm to determine if a string has all unique
+> characters.  What if you cannot use additional data structures?
+
+The best solution if we're allowed additional data structures is to
+remember which characters we've already seen.  For ASCII this can be
+done trivially using an array (or bit-array) of 256 booleans, but for
+Unicode, we need a sparse map from characters to booleans.  The obvious
+solutions use hash tables and balanced binary search trees, but more
+exotic and probably unnecessarily heavyweight alternatives include Bloom
+filters and (taking advantage of Unicode's multibyte encoding) B-trees.
+It's tempting to try to adapt the Aho-Corasick algorithm, but that
+sounds way too complicated.
+
+If we're not allowed any additional data structures, but we're allowed
+to mutate the string, then we can sort the characters.  Otherwise, we
+just have to search the suffix for each character and accept quadratic
+runtime. 
+
+Here's a solution using boolean arrays:
+
+    #include <string.h>
+    bool does_string_repeat_characters(char *s) {
+      bool seen[256];
+
+      memset(seen, false, 256);
+
+      while (*s) {
+        if (seen[*s]) {
+          return true;
+        } else seen[*s++] = true;
+      }
+
+      return false;
+    }
+
+But GCC represents booleans as 32-bit integers, which means the seen
+array needs 1 kB to represent 256 boolean values.  Switching to a bit
+array reduces the memory usage to 32 bytes.  While reducing 1kb to 32
+bytes is not a big deal in terms of memory these days, it might have
+affect cache performance.  (For better or worse, the C++ STL does
+specialize `vector<bool>` to a bit array.)
