@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "150?1.2: Reverse a string in place"
-published: true
+published: false
 ---
 
 > Implement a function `void reverse(char *str)` in C or C++ which

@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "How Bell Labs creates star performers"
-published: true
+published: false
 ---
 
 

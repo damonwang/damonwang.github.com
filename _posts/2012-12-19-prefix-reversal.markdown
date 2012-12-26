@@ -1,11 +1,8 @@
 ---
 title: "Puzzle: Prefix Reversal"
 layout: post
-published: true
+published: false
 ---
-
-Prefix Reversal
-===============
 
 Here's a quick and easy puzzle:
 

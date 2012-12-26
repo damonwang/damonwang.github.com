@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "150?1.4: Percent-encoding"
-published: true
+published: false
 ---
 
 > Write a method to replace all spaces in a string with '%20'.  You may

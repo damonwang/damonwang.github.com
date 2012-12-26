@@ -1,7 +1,7 @@
 ---
 title: "OASIS builds with camlp4"
 layout: post
-published: true
+published: false
 ---
 
 As of v0.3.0, OASIS is not camlp4-aware. However, the underlying
